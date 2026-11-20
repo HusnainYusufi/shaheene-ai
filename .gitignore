@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+# Real driver screenshots: never committed
+evals/fixtures/*
+!evals/fixtures/.gitkeep
+evals/results/
