@@ -12,7 +12,7 @@ const JobInput = z.object({
   driverId: z.string().min(1),
   submittedAt: z.iso.datetime({ offset: true }),
   deliveredAt: z.iso.datetime({ offset: true }).nullish(),
-  link: z.string().url().nullish(),
+  link: z.string().max(2000).nullish(), // as the driver typed it; may lack https://
   note: z.string().max(200).nullish(),
 });
 

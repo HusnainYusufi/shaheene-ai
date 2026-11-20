@@ -1,12 +1,18 @@
-import * as prompt from '../prompts/classify.v1.js';
+import * as prompt from '../prompts/classify.v2.js';
 import { ClassificationSchema } from '../schemas/classification.js';
 import { retry } from '../../../utils/retry.js';
 import { CODES, reason } from '../reasonCodes.js';
 
-/** LLM judges the text: genuine vs templated, and sentiment. */
+/**
+ * LLM judges the text: genuine vs templated, sentiment, and whether it praises
+ * Legend Sleep. Only a positive review that praises Legend Sleep can pass.
+ */
 async function run(ctx, deps) {
   const { reviewText, rating } = ctx.extraction;
-  if (!reviewText) return { skipped: 'no review text' };
+  if (!reviewText || !reviewText.trim()) {
+    ctx.reasons.push(reason(CODES.NO_REVIEW_TEXT));
+    return { skipped: 'no review text' };
+  }
 
   const { data } = await retry(
     (signal) =>
@@ -30,6 +36,13 @@ async function run(ctx, deps) {
   }
   if (data.sentiment === 'negative') {
     ctx.reasons.push(reason(CODES.NEGATIVE_REVIEW, { sentiment: 'negative' }));
+  } else if (data.sentiment !== 'positive' || !data.praisesBusiness) {
+    ctx.reasons.push(
+      reason(CODES.NOT_POSITIVE, {
+        sentiment: data.sentiment,
+        praisesBusiness: data.praisesBusiness,
+      }),
+    );
   }
   return { promptVersion: prompt.VERSION, ...data };
 }

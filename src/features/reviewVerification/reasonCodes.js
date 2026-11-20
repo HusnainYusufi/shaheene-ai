@@ -1,7 +1,9 @@
 /**
  * Every reason a check can give. `effect` is what the code does to the decision:
- *   reject        -> the review is rejected unless a human overrides it
- *   manual_review -> a human must look before approval
+ *   reject        -> clear evidence against the review
+ *   manual_review -> not proven good enough to pay
+ * legend-delivery pays only on approve: both effects end as a rejected review,
+ * with the reason shown to the driver, who may send a better screenshot.
  */
 const REASONS = Object.freeze({
   DUPLICATE_IMAGE: { effect: 'reject', label: 'Same screenshot already submitted' },
@@ -12,7 +14,9 @@ const REASONS = Object.freeze({
   REVIEW_BEFORE_DELIVERY: { effect: 'reject', label: 'Review was posted before the delivery' },
   LATE_SUBMISSION: { effect: 'manual_review', label: 'Submitted long after delivery' },
   REVIEWER_REUSED: { effect: 'manual_review', label: 'Reviewer name used on another order' },
-  NEGATIVE_REVIEW: { effect: 'manual_review', label: 'Low rating or negative review' },
+  NEGATIVE_REVIEW: { effect: 'reject', label: 'Low rating or negative review' },
+  NOT_POSITIVE: { effect: 'manual_review', label: 'Review does not praise Legend Sleep' },
+  NO_REVIEW_TEXT: { effect: 'manual_review', label: 'Review has no written text' },
   TEXT_DUPLICATE: { effect: 'reject', label: 'Review text copied from another review' },
   TEXT_SIMILAR: { effect: 'manual_review', label: 'Review text very close to another review' },
   TEMPLATED_TEXT: { effect: 'manual_review', label: 'Review text looks templated' },

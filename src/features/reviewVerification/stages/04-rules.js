@@ -58,8 +58,9 @@ function evaluate({
     out.push(reason(CODES.REVIEWER_REUSED, { otherOrders: reviewerUses.length }));
   }
 
-  if (ex.rating != null && ex.rating <= 3)
+  if (ex.rating != null && ex.rating <= 2)
     out.push(reason(CODES.NEGATIVE_REVIEW, { rating: ex.rating }));
+  else if (ex.rating === 3) out.push(reason(CODES.NOT_POSITIVE, { rating: 3 }));
 
   if (ex.reviewState === 'draft') out.push(reason(CODES.REVIEW_NOT_PUBLISHED));
   if (ex.editingSuspected) out.push(reason(CODES.SUSPECTED_EDIT, { notes: ex.editingNotes }));

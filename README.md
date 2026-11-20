@@ -2,7 +2,16 @@
 
 AI verification service for Shaheen, the Legend Sleep delivery platform.
 
-Drivers earn a reward for each customer review they collect. In the driver app, they upload a screenshot of the review. legend-delivery stores the screenshot and asks this service to check it. The service returns one of three verdicts: `approve`, `manual_review` or `reject`, each with reason codes. It never pays a reward by itself. legend-delivery and the reviews admin decide what to do with each verdict.
+Drivers earn a reward (5 SAR) for each customer review they collect. In the driver app, they upload a screenshot of the review. legend-delivery stores the screenshot and asks this service to check it. The service returns one of three verdicts, `approve`, `manual_review` or `reject`, each with reason codes.
+
+There is no human check. legend-delivery approves the review and pays the reward only on `approve`. Both other verdicts reject the review, and the driver sees the reason in the app and may send a better screenshot. `manual_review` still exists so that the record shows which rejections were clear evidence and which were "not proven good enough".
+
+A review earns the reward only when all of these are true:
+
+- the screenshot shows a published review on Legend Sleep's page;
+- it has written text, not only stars, and 4 or 5 stars when stars show;
+- the text is positive and praises Legend Sleep itself: its products, ordering, delivery, driver or service (`classify.v2`);
+- it is not a copy of an earlier screenshot or review text, and was posted after the delivery.
 
 ## How it works
 
@@ -70,13 +79,23 @@ The endpoint responds `202 { checkId, status }`. If a check for the same review 
 
 `GET /checks/:id` returns the check's status, decision, reasons, per-stage results, extracted fields, classification, model and prompt versions.
 
-## Needed on the legend-delivery side
+## legend-delivery side
 
-These endpoints are not built yet. The client lives in `src/clients/legendDelivery.js`.
+Built in legend-delivery `features/review` (`ShaheenAi.js`, `InternalReviewController.js`, `ReviewAiJob.js`). The client here lives in `src/clients/legendDelivery.js`.
 
-1. `GET /internal/reviews/:id/screenshot`: streams the private screenshot. Authenticated with `x-service-token: LEGEND_DELIVERY_TOKEN`, not a user JWT.
-2. `POST /internal/reviews/:id/ai-check`: stores the verdict on the Review, for example under `review.aiCheck`. The admin reviews screen shows it next to the screenshot.
-3. When a driver submits a review, call `POST /jobs/review-verification`.
+1. When a driver submits a review, legend-delivery calls `POST /jobs/review-verification`. A failed call, or a check with no answer after 2 hours, is sent again every 10 minutes.
+2. `GET /internal/reviews/:id/screenshot` streams the private screenshot.
+3. `POST /internal/reviews/:id/ai-check` applies the verdict: `approve` approves and pays the reward; anything else rejects with a reason the driver can read. A repeated verdict for the same check is ignored.
+4. The driver app checks `GET /reviews/notifications` and shows "You earned 5 SAR" or the rejection reason.
+
+Tokens, one per direction:
+
+| shaheen-ai | legend-delivery | Used for |
+|---|---|---|
+| `SERVICE_TOKEN` | `SHAHEEN_AI_TOKEN` | legend-delivery calling this service |
+| `LEGEND_DELIVERY_TOKEN` | `SHAHEEN_AI_INBOUND_TOKEN` | this service calling `/internal/*` |
+
+legend-delivery also needs `SHAHEEN_AI_URL`. Without it the integration is off and reviews stay pending.
 
 ## Tests and evals
 

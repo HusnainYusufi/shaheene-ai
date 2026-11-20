@@ -79,9 +79,13 @@ t('late submission', () =>
 t('reviewer reused on another order', () =>
   assert.deepStrictEqual(run({}, { reviewerUses: ['DEMO-1'] }), ['REVIEWER_REUSED']),
 );
-t('3 stars or less needs a human', () =>
-  assert.deepStrictEqual(run({ rating: 3 }), ['NEGATIVE_REVIEW']),
+t('2 stars or less is negative', () =>
+  assert.deepStrictEqual(run({ rating: 2 }), ['NEGATIVE_REVIEW']),
 );
+t('3 stars is not positive enough', () =>
+  assert.deepStrictEqual(run({ rating: 3 }), ['NOT_POSITIVE']),
+);
+t('4 stars is fine', () => assert.deepStrictEqual(run({ rating: 4 }), []));
 t('no rating is fine', () => assert.deepStrictEqual(run({ rating: null }), []));
 t('draft review is not proof', () =>
   assert.deepStrictEqual(run({ reviewState: 'draft' }), ['REVIEW_NOT_PUBLISHED']),
@@ -95,7 +99,7 @@ t('low confidence', () => assert.deepStrictEqual(run({ confidence: 0.4 }), ['LOW
 
 t('decide: reject wins over manual_review', () => {
   const reasons = evaluate({
-    extraction: { ...base, businessName: 'IKEA', rating: 2 },
+    extraction: { ...base, businessName: 'IKEA', rating: 3 },
     submittedAt: SUBMITTED,
     deliveredAt: DELIVERED,
     businessNames: BUSINESS,
