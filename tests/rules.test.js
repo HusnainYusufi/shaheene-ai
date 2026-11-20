@@ -18,6 +18,9 @@ const base = {
   language: 'ar',
   postedRelative: 'منذ يوم',
   postedAgeDays: 1,
+  reviewState: 'published',
+  editingSuspected: false,
+  editingNotes: null,
   confidence: 0.92,
 };
 
@@ -80,6 +83,14 @@ t('3 stars or less needs a human', () =>
   assert.deepStrictEqual(run({ rating: 3 }), ['NEGATIVE_REVIEW']),
 );
 t('no rating is fine', () => assert.deepStrictEqual(run({ rating: null }), []));
+t('draft review is not proof', () =>
+  assert.deepStrictEqual(run({ reviewState: 'draft' }), ['REVIEW_NOT_PUBLISHED']),
+);
+t('edited screenshot needs a human', () =>
+  assert.deepStrictEqual(run({ editingSuspected: true, editingNotes: 'stars pasted' }), [
+    'SUSPECTED_EDIT',
+  ]),
+);
 t('low confidence', () => assert.deepStrictEqual(run({ confidence: 0.4 }), ['LOW_CONFIDENCE']));
 
 t('decide: reject wins over manual_review', () => {

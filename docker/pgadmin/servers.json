@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "shaheen-ai (local)",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "shaheen_ai",
+      "Username": "shaheen",
+      "SSLMode": "prefer"
+    }
+  }
+}

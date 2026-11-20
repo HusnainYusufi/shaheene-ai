@@ -12,7 +12,7 @@ async function run(ctx, deps) {
   if (textNorm.length < MIN_CHARS) return { skipped: 'text too short' };
 
   const { vectors, model } = await retry(
-    (signal) => deps.embeddings.embed([textNorm], { inputType: 'document', signal }),
+    (signal) => deps.embeddings.embed([textNorm], { signal }),
     { retries: 2, timeoutMs: 20_000 },
   );
   const [vector] = vectors;

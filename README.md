@@ -14,7 +14,7 @@ worker ◀───────────────────────�
   02 imageHash       sha256 exact match + 64-bit dHash (Hamming ≤ PHASH_MAX_DISTANCE)
   03 extract         vision LLM → business, reviewer, rating, text, posted time
   04 rules           business name, timing vs delivery, reviewer reuse, rating, confidence
-  05 textSimilarity  Voyage embeddings + pgvector cosine search
+  05 textSimilarity  local embeddings (multilingual-e5-small) + pgvector cosine search
   06 classify        LLM: genuine vs templated, sentiment
   07 decide          any reject reason → reject; any manual_review reason → manual_review; else approve
   └─▶ POST legend-delivery /internal/reviews/:id/ai-check
@@ -29,7 +29,7 @@ An exact duplicate image, or an image that is not a review, stops the pipeline e
 The project is Node.js with ES modules (`"type": "module"`). Note that legend-delivery itself is CommonJS.
 
 
-- `src/providers/` is the only code that knows which AI company is in use. To switch, set `LLM_PROVIDER=anthropic|minimax`. Features call `llm.generateJson({ system, content, schema })` and `embeddings.embed(texts)`.
+- `src/providers/` is the only code that knows which AI company is in use. The LLM defaults to MiniMax (`MiniMax-M3.1-Flash`, reads images), and `LLM_PROVIDER=anthropic` switches it. MiniMax has no embeddings API, so embeddings come from a local model by default (`EMBEDDINGS_PROVIDER=local`, no key, text stays on the server). Voyage is the hosted alternative. Features call `llm.generateJson({ system, content, schema })` and `embeddings.embed(texts)`.
 - Prompts are versioned files (`extract.v1.js`). Each check records which prompt versions and which model produced it. To change a prompt, add `v2` instead of editing `v1`.
 - All SQL for the feature lives in `repository.js`.
 - `src/utils/arabicText.js` normalises Arabic text and scrubs phone numbers before review text is stored or sent anywhere.
@@ -39,7 +39,8 @@ The project is Node.js with ES modules (`"type": "module"`). Note that legend-de
 ```bash
 cp .env.example .env        # fill in the keys
 npm install
-npm run db:up               # Postgres 17 + pgvector on localhost:5433
+npm run db:up               # Postgres 17 + pgvector on :5433, pgAdmin UI on http://localhost:5050
+npm run playground          # learn semantic search on made-up reviews (no API key needed)
 npm run dev                 # runs migrations, starts pg-boss, worker and HTTP on :4100
 ```
 

@@ -25,6 +25,18 @@ const ExtractionSchema = z.object({
     .min(0)
     .nullable()
     .describe('postedRelative converted to days before the screenshot was taken; null if unknown'),
+  reviewState: z
+    .enum(['published', 'draft', 'unknown'])
+    .describe('draft = the compose/edit screen with a Post or Publish button, not a posted review'),
+  editingSuspected: z
+    .boolean()
+    .describe(
+      'True if the screenshot looks edited: mismatched fonts, misaligned or pasted text, broken UI',
+    ),
+  editingNotes: z
+    .string()
+    .nullable()
+    .describe('What looks edited, short, English; null if nothing'),
   confidence: z.number().min(0).max(1).describe('How sure you are of the fields above'),
 });
 

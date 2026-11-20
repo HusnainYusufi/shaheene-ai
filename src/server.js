@@ -3,6 +3,7 @@ import express from 'express';
 import env from './config/env.js';
 import { pool } from './db/pool.js';
 import { migrate } from './db/migrate.js';
+import embeddings from './providers/embeddings/index.js';
 import { startBoss, stopBoss } from './queue/boss.js';
 import { serviceAuth } from './middlewares/serviceAuth.js';
 import { notFound, errorHandler } from './middlewares/errorHandler.js';
@@ -34,6 +35,10 @@ function buildApp() {
 
 async function main() {
   await migrate();
+  if (embeddings.warmup) {
+    console.log('[shaheen-ai] loading embeddings model (first run downloads it)');
+    await embeddings.warmup();
+  }
   await startBoss();
   await startReviewVerificationWorker();
 

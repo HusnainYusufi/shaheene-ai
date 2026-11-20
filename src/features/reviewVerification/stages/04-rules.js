@@ -61,6 +61,9 @@ function evaluate({
   if (ex.rating != null && ex.rating <= 3)
     out.push(reason(CODES.NEGATIVE_REVIEW, { rating: ex.rating }));
 
+  if (ex.reviewState === 'draft') out.push(reason(CODES.REVIEW_NOT_PUBLISHED));
+  if (ex.editingSuspected) out.push(reason(CODES.SUSPECTED_EDIT, { notes: ex.editingNotes }));
+
   if (ex.confidence < MIN_CONFIDENCE) {
     out.push(reason(CODES.LOW_CONFIDENCE, { stage: 'extract', confidence: ex.confidence }));
   }

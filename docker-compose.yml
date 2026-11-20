@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: shaheen
       POSTGRES_DB: shaheen_ai
     ports:
-      - '5433:5432'
+      - '127.0.0.1:5433:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -17,5 +17,26 @@ services:
       timeout: 3s
       retries: 10
 
+  # Database UI: http://localhost:5050 (local dev only, no login screen).
+  # The server is pre-registered; its password is "shaheen".
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: shaheen-ai-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@example.com
+      PGADMIN_DEFAULT_PASSWORD: dev-only
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - '127.0.0.1:5050:80'
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - pgadmin:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
+  pgadmin:

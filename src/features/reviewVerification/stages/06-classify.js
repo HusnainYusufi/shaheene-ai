@@ -28,6 +28,9 @@ async function run(ctx, deps) {
   if (data.authenticity === 'templated') {
     ctx.reasons.push(reason(CODES.TEMPLATED_TEXT, { rationale: data.rationale }));
   }
+  if (data.sentiment === 'negative') {
+    ctx.reasons.push(reason(CODES.NEGATIVE_REVIEW, { sentiment: 'negative' }));
+  }
   return { promptVersion: prompt.VERSION, ...data };
 }
 
