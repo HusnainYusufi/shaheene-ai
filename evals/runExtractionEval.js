@@ -1,4 +1,3 @@
-'use strict';
 /**
  * Scores the extraction stage (and the rule-based decision) against hand labels.
  *
@@ -19,18 +18,18 @@
  * Any expected field may be omitted; only the given ones are scored.
  * Calls the real LLM provider from .env: each run costs money.
  */
-const fs = require('fs');
-const path = require('path');
-const sharp = require('sharp');
-const env = require('../src/config/env');
-const llm = require('../src/providers/llm');
-const extract = require('../src/features/reviewVerification/stages/03-extract');
-const { evaluate, matchesBusiness } = require('../src/features/reviewVerification/stages/04-rules');
-const { decide } = require('../src/features/reviewVerification/stages/07-decide');
-const { nameKey } = require('../src/utils/arabicText');
+import fs from 'node:fs';
+import path from 'node:path';
+import sharp from 'sharp';
+import env from '../src/config/env.js';
+import llm from '../src/providers/llm/index.js';
+import * as extract from '../src/features/reviewVerification/stages/03-extract.js';
+import { evaluate, matchesBusiness } from '../src/features/reviewVerification/stages/04-rules.js';
+import { decide } from '../src/features/reviewVerification/stages/07-decide.js';
+import { nameKey } from '../src/utils/arabicText.js';
 
-const FIXTURES = path.join(__dirname, 'fixtures');
-const RESULTS = path.join(__dirname, 'results');
+const FIXTURES = path.join(import.meta.dirname, 'fixtures');
+const RESULTS = path.join(import.meta.dirname, 'results');
 
 async function runOne(label) {
   const buffer = fs.readFileSync(path.join(FIXTURES, label.file));
@@ -72,9 +71,9 @@ const same = (field, a, b) => (field === 'reviewerName' ? nameKey(a) === nameKey
   const only = process.argv.includes('--only')
     ? process.argv[process.argv.indexOf('--only') + 1]
     : null;
-  const labels = JSON.parse(fs.readFileSync(path.join(__dirname, 'labels.json'), 'utf8')).filter(
-    (l) => !only || l.file === only,
-  );
+  const labels = JSON.parse(
+    fs.readFileSync(path.join(import.meta.dirname, 'labels.json'), 'utf8'),
+  ).filter((l) => !only || l.file === only);
   if (!labels.length) {
     console.log('No labels. Add screenshots to evals/fixtures/ and entries to evals/labels.json.');
     return;

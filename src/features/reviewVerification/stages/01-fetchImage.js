@@ -1,7 +1,6 @@
-'use strict';
-const crypto = require('crypto');
-const sharp = require('sharp');
-const { CODES, reason } = require('../reasonCodes');
+import crypto from 'node:crypto';
+import sharp from 'sharp';
+import { CODES, reason } from '../reasonCodes.js';
 
 const MAX_SIDE = 1600; // enough to read review text; keeps vision tokens down
 
@@ -20,7 +19,10 @@ async function run(ctx, deps) {
   } catch (err) {
     ctx.reasons.push(reason(CODES.IMAGE_UNREADABLE, err.message));
     ctx.stop = true;
+    return { sha256: ctx.image.sha256, bytes: buffer.length, error: err.message };
   }
+  return { sha256: ctx.image.sha256, bytes: buffer.length };
 }
 
-module.exports = { name: 'fetchImage', run };
+export const name = 'fetchImage';
+export { run };

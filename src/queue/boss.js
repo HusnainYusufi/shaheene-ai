@@ -1,6 +1,5 @@
-'use strict';
-const { PgBoss } = require('pg-boss');
-const env = require('../config/env');
+import { PgBoss } from 'pg-boss';
+import env from '../config/env.js';
 
 const QUEUES = Object.freeze({ REVIEW_VERIFICATION: 'review-verification' });
 
@@ -33,4 +32,4 @@ async function stopBoss() {
   boss = undefined;
 }
 
-module.exports = { QUEUES, startBoss, getBoss, stopBoss };
+export { QUEUES, startBoss, getBoss, stopBoss };

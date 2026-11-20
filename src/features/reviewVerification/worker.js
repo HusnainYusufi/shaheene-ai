@@ -1,7 +1,6 @@
-'use strict';
-const env = require('../../config/env');
-const { QUEUES, getBoss } = require('../../queue/boss');
-const { runPipeline } = require('./pipeline');
+import env from '../../config/env.js';
+import { QUEUES, getBoss } from '../../queue/boss.js';
+import { runPipeline } from './pipeline.js';
 
 /** Pulls review-verification jobs from pg-boss and runs the pipeline for each. */
 async function startReviewVerificationWorker() {
@@ -20,4 +19,4 @@ async function startReviewVerificationWorker() {
   console.log(`[review-verification] worker started (concurrency ${env.WORKER_CONCURRENCY})`);
 }
 
-module.exports = { startReviewVerificationWorker };
+export { startReviewVerificationWorker };

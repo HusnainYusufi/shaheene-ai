@@ -1,6 +1,7 @@
-'use strict';
-require('dotenv').config({ quiet: true });
-const { z } = require('zod');
+import dotenv from 'dotenv';
+import { z } from 'zod';
+
+dotenv.config({ quiet: true });
 
 const list = (s) =>
   String(s || '')
@@ -64,4 +65,4 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-module.exports = Object.freeze(parsed.data);
+export default Object.freeze(parsed.data);

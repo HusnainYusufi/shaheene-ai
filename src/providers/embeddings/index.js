@@ -1,8 +1,9 @@
-'use strict';
-const env = require('../../config/env');
+import env from '../../config/env.js';
 
 const adapters = {
-  voyage: () => require('./voyage'),
+  voyage: () => import('./voyage.js'),
 };
 
-module.exports = adapters[env.EMBEDDINGS_PROVIDER]();
+const embeddings = await adapters[env.EMBEDDINGS_PROVIDER]();
+
+export default embeddings;

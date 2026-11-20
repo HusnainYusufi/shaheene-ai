@@ -1,9 +1,8 @@
-'use strict';
-const prompt = require('../prompts/extract.v1');
-const { ExtractionSchema } = require('../schemas/extraction');
-const { scrubPhones } = require('../../../utils/arabicText');
-const { retry } = require('../../../utils/retry');
-const { CODES, reason } = require('../reasonCodes');
+import * as prompt from '../prompts/extract.v1.js';
+import { ExtractionSchema } from '../schemas/extraction.js';
+import { scrubPhones } from '../../../utils/arabicText.js';
+import { retry } from '../../../utils/retry.js';
+import { CODES, reason } from '../reasonCodes.js';
 
 /** Vision LLM reads the screenshot into structured fields. */
 async function run(ctx, deps) {
@@ -29,6 +28,8 @@ async function run(ctx, deps) {
     ctx.reasons.push(reason(CODES.NOT_A_REVIEW));
     ctx.stop = true;
   }
+  return { model, promptVersion: prompt.VERSION, ...ctx.extraction };
 }
 
-module.exports = { name: 'extract', run };
+export const name = 'extract';
+export { run };

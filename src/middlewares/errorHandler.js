@@ -1,5 +1,4 @@
-'use strict';
-const { ZodError } = require('zod');
+import { ZodError } from 'zod';
 
 class HttpError extends Error {
   constructor(status, code, message) {
@@ -25,4 +24,4 @@ function errorHandler(err, req, res, next) {
   res.status(500).json({ error: 'INTERNAL' });
 }
 
-module.exports = { HttpError, notFound, errorHandler };
+export { HttpError, notFound, errorHandler };

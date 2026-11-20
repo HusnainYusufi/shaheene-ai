@@ -1,5 +1,3 @@
-'use strict';
-
 const VERSION = 'extract.v1';
 
 const system = `You read screenshots that delivery drivers upload as proof that a customer posted a review.
@@ -16,4 +14,4 @@ function user({ submittedAt }) {
   return `The screenshot was uploaded at ${submittedAt}. Extract the review fields.`;
 }
 
-module.exports = { VERSION, system, user };
+export { VERSION, system, user };

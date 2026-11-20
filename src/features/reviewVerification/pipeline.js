@@ -1,20 +1,19 @@
-'use strict';
-const env = require('../../config/env');
-const llm = require('../../providers/llm');
-const embeddings = require('../../providers/embeddings');
-const legendDelivery = require('../../clients/legendDelivery');
-const repo = require('./repository');
-const { REASONS } = require('./reasonCodes');
+import env from '../../config/env.js';
+import llm from '../../providers/llm/index.js';
+import embeddings from '../../providers/embeddings/index.js';
+import * as legendDelivery from '../../clients/legendDelivery.js';
+import * as repo from './repository.js';
+import { REASONS } from './reasonCodes.js';
+import * as fetchImage from './stages/01-fetchImage.js';
+import * as imageHash from './stages/02-imageHash.js';
+import * as extract from './stages/03-extract.js';
+import * as rules from './stages/04-rules.js';
+import * as textSimilarity from './stages/05-textSimilarity.js';
+import * as classify from './stages/06-classify.js';
+import * as decide from './stages/07-decide.js';
 
-const STAGES = [
-  require('./stages/01-fetchImage'),
-  require('./stages/02-imageHash'),
-  require('./stages/03-extract'),
-  require('./stages/04-rules'),
-  require('./stages/05-textSimilarity'),
-  require('./stages/06-classify'),
-];
-const decideStage = require('./stages/07-decide');
+/** Cheap stages first: a duplicate image is rejected before paying for a vision call. */
+export const STAGES = [fetchImage, imageHash, extract, rules, textSimilarity, classify, decide];
 
 const defaultDeps = { env, llm, embeddings, legendDelivery, repo };
 
@@ -48,10 +47,12 @@ function toResult({ checkId, decision, reasons, extraction, classification, mode
 }
 
 /**
- * Runs every stage for one check. A stage may set ctx.stop to skip the rest
- * (exact duplicate, not a review); decide always runs.
+ * Runs every stage for one check. Each stage reads the shared ctx, pushes
+ * reasons, and returns its output, saved as ctx.results[stage.name] = { ms, output }.
+ * A stage may set ctx.stop (exact duplicate, not a review): the stages after it
+ * are recorded as skipped, but decide always runs.
  */
-async function runPipeline(checkId, deps = defaultDeps) {
+export async function runPipeline(checkId, deps = defaultDeps) {
   const check = await deps.repo.getCheck(checkId);
   if (!check) throw new Error(`Check ${checkId} not found`);
 
@@ -63,7 +64,7 @@ async function runPipeline(checkId, deps = defaultDeps) {
         toResult({
           checkId: check.id,
           decision: check.decision,
-          reasons: check.signals?.reasons || [],
+          reasons: check.reasons,
           extraction: check.extraction,
           classification: check.classification,
           model: check.llm_model,
@@ -71,7 +72,7 @@ async function runPipeline(checkId, deps = defaultDeps) {
       );
       await deps.repo.markReported(check.id);
     }
-    return;
+    return null;
   }
 
   await deps.repo.markRunning(check.id);
@@ -79,20 +80,24 @@ async function runPipeline(checkId, deps = defaultDeps) {
     check,
     input: check.input,
     reasons: [],
-    signals: {},
+    results: {},
     promptVersions: {},
     stop: false,
   };
 
   try {
     for (const stage of STAGES) {
-      if (ctx.stop) break;
-      await stage.run(ctx, deps);
+      if (ctx.stop && stage !== decide) {
+        ctx.results[stage.name] = { skipped: true };
+        continue;
+      }
+      if (stage === decide) ctx.reasons = uniqueReasons(ctx.reasons);
+      const started = Date.now();
+      const output = await stage.run(ctx, deps);
+      ctx.results[stage.name] = { ms: Date.now() - started, output: output ?? null };
     }
-    ctx.reasons = uniqueReasons(ctx.reasons);
-    await decideStage.run(ctx, deps);
   } catch (err) {
-    await deps.repo.failCheck(check.id, err.message);
+    await deps.repo.failCheck(check.id, err.message, ctx.results);
     throw err; // pg-boss retries with backoff
   }
 
@@ -107,18 +112,17 @@ async function runPipeline(checkId, deps = defaultDeps) {
   await deps.repo.finishCheck(check.id, {
     decision: ctx.decision,
     reasonCodes: ctx.reasons.map((r) => r.code),
+    reasons: result.reasons,
     reviewerKey: ctx.reviewerKey || null,
     extraction: ctx.extraction || null,
     classification: ctx.classification || null,
-    signals: { ...ctx.signals, reasons: result.reasons },
     llmProvider: deps.llm.name,
     llmModel: ctx.llmModel || null,
     promptVersions: ctx.promptVersions,
+    stageResults: ctx.results,
   });
 
   await deps.legendDelivery.writeResult(check.review_id, result);
   await deps.repo.markReported(check.id);
   return result;
 }
-
-module.exports = { runPipeline, STAGES };

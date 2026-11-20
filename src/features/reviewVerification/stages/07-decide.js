@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * approve        -> no reasons at all
  * manual_review  -> only manual_review reasons
@@ -14,6 +12,8 @@ function decide(reasons) {
 
 async function run(ctx) {
   ctx.decision = decide(ctx.reasons);
+  return { decision: ctx.decision, reasons: ctx.reasons.map((r) => r.code) };
 }
 
-module.exports = { name: 'decide', run, decide };
+export const name = 'decide';
+export { run, decide };

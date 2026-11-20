@@ -1,5 +1,3 @@
-'use strict';
-
 const TASHKEEL = /[ؐ-ًؚ-ٰٟۖ-ۭ]/g;
 const TATWEEL = /ـ/g;
 const ARABIC_DIGITS = /[٠-٩۰-۹]/g;
@@ -46,4 +44,4 @@ function scrubPhones(input) {
   return toLatinDigits(String(input)).replace(PHONE, '[PHONE]');
 }
 
-module.exports = { normalizeArabic, nameKey, scrubPhones, toLatinDigits };
+export { normalizeArabic, nameKey, scrubPhones, toLatinDigits };

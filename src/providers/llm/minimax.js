@@ -1,6 +1,5 @@
-'use strict';
-const env = require('../../config/env');
-const { toJsonSchema, extractJson } = require('./jsonSchema');
+import env from '../../config/env.js';
+import { toJsonSchema, extractJson } from './jsonSchema.js';
 
 function toParts(content) {
   return content.map((part) =>
@@ -55,4 +54,5 @@ async function generateJson({ system, content, schema, maxTokens = 4096, signal 
   };
 }
 
-module.exports = { name: 'minimax', generateJson };
+export const name = 'minimax';
+export { generateJson };

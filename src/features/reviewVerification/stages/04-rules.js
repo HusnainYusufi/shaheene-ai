@@ -1,6 +1,5 @@
-'use strict';
-const { nameKey } = require('../../../utils/arabicText');
-const { CODES, reason } = require('../reasonCodes');
+import { nameKey } from '../../../utils/arabicText.js';
+import { CODES, reason } from '../reasonCodes.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const MIN_CONFIDENCE = 0.6;
@@ -76,16 +75,17 @@ async function run(ctx, deps) {
     ? await deps.repo.findReviewerUses(reviewerKey, ctx.input.orderNo)
     : [];
 
-  ctx.reasons.push(
-    ...evaluate({
-      extraction: ctx.extraction,
-      submittedAt: ctx.input.submittedAt,
-      deliveredAt: ctx.input.deliveredAt,
-      businessNames: deps.env.BUSINESS_NAMES,
-      reviewerUses,
-      maxSubmitDelayDays: deps.env.MAX_SUBMIT_DELAY_DAYS,
-    }),
-  );
+  const found = evaluate({
+    extraction: ctx.extraction,
+    submittedAt: ctx.input.submittedAt,
+    deliveredAt: ctx.input.deliveredAt,
+    businessNames: deps.env.BUSINESS_NAMES,
+    reviewerUses,
+    maxSubmitDelayDays: deps.env.MAX_SUBMIT_DELAY_DAYS,
+  });
+  ctx.reasons.push(...found);
+  return { reviewerUses: reviewerUses.length, reasons: found.map((r) => r.code) };
 }
 
-module.exports = { name: 'rules', run, evaluate, matchesBusiness };
+export const name = 'rules';
+export { run, evaluate, matchesBusiness };

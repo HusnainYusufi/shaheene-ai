@@ -1,21 +1,28 @@
-'use strict';
-const express = require('express');
-const env = require('./config/env');
-const { pool } = require('./db/pool');
-const { migrate } = require('./db/migrate');
-const { startBoss, stopBoss } = require('./queue/boss');
-const { serviceAuth } = require('./middlewares/serviceAuth');
-const { notFound, errorHandler } = require('./middlewares/errorHandler');
-const reviewVerificationRoutes = require('./features/reviewVerification/routes');
-const { startReviewVerificationWorker } = require('./features/reviewVerification/worker');
+import { fileURLToPath } from 'node:url';
+import express from 'express';
+import env from './config/env.js';
+import { pool } from './db/pool.js';
+import { migrate } from './db/migrate.js';
+import { startBoss, stopBoss } from './queue/boss.js';
+import { serviceAuth } from './middlewares/serviceAuth.js';
+import { notFound, errorHandler } from './middlewares/errorHandler.js';
+import reviewVerificationRoutes from './features/reviewVerification/routes.js';
+import { startReviewVerificationWorker } from './features/reviewVerification/worker.js';
 
 function buildApp() {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '100kb' }));
 
-  // Liveness only, no data: open so Docker / PM2 can probe it.
-  app.get('/health', (req, res) => res.json({ ok: true }));
+  // Open so Docker / PM2 can probe it. Returns no data beyond up/down.
+  app.get('/health', async (req, res) => {
+    try {
+      await pool.query('SELECT 1');
+      res.json({ ok: true, db: 'up' });
+    } catch {
+      res.status(503).json({ ok: false, db: 'down' });
+    }
+  });
 
   app.use(serviceAuth);
   app.use(reviewVerificationRoutes);
@@ -45,11 +52,11 @@ async function main() {
   process.on('SIGTERM', shutdown);
 }
 
-if (require.main === module) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((err) => {
     console.error('[shaheen-ai] failed to start:', err.message);
     process.exit(1);
   });
 }
 
-module.exports = { buildApp };
+export { buildApp };

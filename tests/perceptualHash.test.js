@@ -1,8 +1,7 @@
-'use strict';
 // Run: node tests/perceptualHash.test.js
-const assert = require('assert');
-const sharp = require('sharp');
-const { dHash, hammingDistance, toSigned64, toUnsigned64 } = require('../src/utils/perceptualHash');
+import assert from 'node:assert';
+import sharp from 'sharp';
+import { dHash, hammingDistance, toSigned64, toUnsigned64 } from '../src/utils/perceptualHash.js';
 
 /** Synthetic "screenshot": a gradient with dark blocks, no real images needed. */
 async function makeImage({ width = 400, height = 800, flip = false } = {}) {

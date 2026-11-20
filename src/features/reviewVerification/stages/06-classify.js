@@ -1,13 +1,12 @@
-'use strict';
-const prompt = require('../prompts/classify.v1');
-const { ClassificationSchema } = require('../schemas/classification');
-const { retry } = require('../../../utils/retry');
-const { CODES, reason } = require('../reasonCodes');
+import * as prompt from '../prompts/classify.v1.js';
+import { ClassificationSchema } from '../schemas/classification.js';
+import { retry } from '../../../utils/retry.js';
+import { CODES, reason } from '../reasonCodes.js';
 
 /** LLM judges the text: genuine vs templated, and sentiment. */
 async function run(ctx, deps) {
   const { reviewText, rating } = ctx.extraction;
-  if (!reviewText) return;
+  if (!reviewText) return { skipped: 'no review text' };
 
   const { data } = await retry(
     (signal) =>
@@ -29,6 +28,8 @@ async function run(ctx, deps) {
   if (data.authenticity === 'templated') {
     ctx.reasons.push(reason(CODES.TEMPLATED_TEXT, { rationale: data.rationale }));
   }
+  return { promptVersion: prompt.VERSION, ...data };
 }
 
-module.exports = { name: 'classify', run };
+export const name = 'classify';
+export { run };

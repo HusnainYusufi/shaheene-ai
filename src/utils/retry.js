@@ -1,5 +1,3 @@
-'use strict';
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 class TimeoutError extends Error {
@@ -57,4 +55,4 @@ async function retry(fn, opts = {}) {
   }
 }
 
-module.exports = { retry, withTimeout, isRetryable, TimeoutError, sleep };
+export { retry, withTimeout, isRetryable, TimeoutError, sleep };

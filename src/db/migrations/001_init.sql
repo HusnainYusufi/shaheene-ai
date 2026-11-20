@@ -14,7 +14,8 @@ CREATE TABLE review_checks (
   reviewer_key    text,                           -- normalised reviewer name, for reuse checks
   extraction      jsonb,
   classification  jsonb,
-  signals         jsonb       NOT NULL DEFAULT '{}',
+  reasons         jsonb       NOT NULL DEFAULT '[]', -- [{ code, effect, detail, label }]
+  stage_results   jsonb       NOT NULL DEFAULT '{}', -- { stageName: { ms, output } }: audit trail
   llm_provider    text,
   llm_model       text,
   prompt_versions jsonb       NOT NULL DEFAULT '{}',

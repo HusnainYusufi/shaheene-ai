@@ -20,9 +20,14 @@ worker ◀───────────────────────�
   └─▶ POST legend-delivery /internal/reviews/:id/ai-check
 ```
 
-An exact duplicate image, or an image that is not a review, stops the pipeline early. This avoids paying for LLM calls whose result cannot change the verdict. Reason codes and their effects are listed in `src/features/reviewVerification/reasonCodes.js`.
+Each stage gets the same shared `ctx`, adds its reasons, and returns its output. The pipeline saves every output as `stage_results` (`{ stageName: { ms, output } }`) on the check, so ops can see exactly why a screenshot was flagged. If a run fails, the stages that did finish are still saved.
+
+An exact duplicate image, or an image that is not a review, stops the pipeline early. The stages after it are recorded as skipped. `decide` always runs. This avoids paying for LLM calls whose result cannot change the verdict. Reason codes and their effects are listed in `src/features/reviewVerification/reasonCodes.js`.
 
 ## Layout
+
+The project is Node.js with ES modules (`"type": "module"`). Note that legend-delivery itself is CommonJS.
+
 
 - `src/providers/` is the only code that knows which AI company is in use. To switch, set `LLM_PROVIDER=anthropic|minimax`. Features call `llm.generateJson({ system, content, schema })` and `embeddings.embed(texts)`.
 - Prompts are versioned files (`extract.v1.js`). Each check records which prompt versions and which model produced it. To change a prompt, add `v2` instead of editing `v1`.
@@ -42,7 +47,9 @@ The service exits at startup if a required environment variable is missing. It l
 
 ## API
 
-Every request except `GET /health` needs the `x-service-token: $SERVICE_TOKEN` header.
+`GET /health` needs no token. It returns `{ ok, db }` and responds 503 when Postgres is unreachable.
+
+Every other request needs the `x-service-token: $SERVICE_TOKEN` header.
 
 `POST /jobs/review-verification`
 
@@ -60,7 +67,7 @@ Every request except `GET /health` needs the `x-service-token: $SERVICE_TOKEN` h
 
 The endpoint responds `202 { checkId, status }`. If a check for the same review is still queued or running, it returns that check with `deduplicated: true` instead of starting a new one.
 
-`GET /checks/:id` returns the check's status, decision, reasons, extracted fields, classification, model and prompt versions.
+`GET /checks/:id` returns the check's status, decision, reasons, per-stage results, extracted fields, classification, model and prompt versions.
 
 ## Needed on the legend-delivery side
 

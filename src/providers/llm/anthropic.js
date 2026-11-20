@@ -1,7 +1,6 @@
-'use strict';
-const Anthropic = require('@anthropic-ai/sdk');
-const env = require('../../config/env');
-const { toJsonSchema, extractJson } = require('./jsonSchema');
+import Anthropic from '@anthropic-ai/sdk';
+import env from '../../config/env.js';
+import { toJsonSchema, extractJson } from './jsonSchema.js';
 
 const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 0 }); // retries live in utils/retry
 
@@ -61,4 +60,5 @@ async function generateJson({ system, content, schema, maxTokens = 4096, signal 
   };
 }
 
-module.exports = { name: 'anthropic', generateJson, LlmRefusalError };
+export const name = 'anthropic';
+export { generateJson, LlmRefusalError };

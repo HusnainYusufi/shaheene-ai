@@ -1,7 +1,6 @@
-'use strict';
-const { normalizeArabic } = require('../../../utils/arabicText');
-const { retry } = require('../../../utils/retry');
-const { CODES, reason } = require('../reasonCodes');
+import { normalizeArabic } from '../../../utils/arabicText.js';
+import { retry } from '../../../utils/retry.js';
+import { CODES, reason } from '../reasonCodes.js';
 
 const MIN_CHARS = 15; // shorter texts ("ممتاز") match everything; the classifier handles them
 
@@ -10,7 +9,7 @@ async function run(ctx, deps) {
   const text = ctx.extraction.reviewText;
   const textNorm = normalizeArabic(text);
   ctx.similar = [];
-  if (textNorm.length < MIN_CHARS) return;
+  if (textNorm.length < MIN_CHARS) return { skipped: 'text too short' };
 
   const { vectors, model } = await retry(
     (signal) => deps.embeddings.embed([textNorm], { inputType: 'document', signal }),
@@ -34,15 +33,21 @@ async function run(ctx, deps) {
     similarity: s.similarity,
     reviewId: s.review_id,
   }));
-  const top = similar[0];
-  ctx.signals.topTextSimilarity = top ? Number(top.similarity.toFixed(4)) : null;
-  if (!top) return;
-
-  if (top.similarity >= deps.env.TEXT_SIMILARITY_REJECT) {
-    ctx.reasons.push(reason(CODES.TEXT_DUPLICATE, { similarity: ctx.signals.topTextSimilarity }));
-  } else if (top.similarity >= deps.env.TEXT_SIMILARITY_REVIEW) {
-    ctx.reasons.push(reason(CODES.TEXT_SIMILAR, { similarity: ctx.signals.topTextSimilarity }));
+  const output = {
+    model,
+    matches: similar.map((s) => ({
+      reviewId: s.review_id,
+      similarity: Number(s.similarity.toFixed(4)),
+    })),
+  };
+  const top = output.matches[0];
+  if (top && top.similarity >= deps.env.TEXT_SIMILARITY_REJECT) {
+    ctx.reasons.push(reason(CODES.TEXT_DUPLICATE, { similarity: top.similarity }));
+  } else if (top && top.similarity >= deps.env.TEXT_SIMILARITY_REVIEW) {
+    ctx.reasons.push(reason(CODES.TEXT_SIMILAR, { similarity: top.similarity }));
   }
+  return output;
 }
 
-module.exports = { name: 'textSimilarity', run };
+export const name = 'textSimilarity';
+export { run };

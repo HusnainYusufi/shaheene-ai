@@ -1,5 +1,4 @@
-'use strict';
-const { query } = require('../../db/pool');
+import { query } from '../../db/pool.js';
 
 const toVector = (v) => `[${v.join(',')}]`;
 
@@ -41,7 +40,7 @@ async function finishCheck(id, r) {
   await query(
     `UPDATE review_checks
         SET status = 'done', decision = $2, reason_codes = $3, reviewer_key = $4,
-            extraction = $5, classification = $6, signals = $7,
+            extraction = $5, classification = $6, reasons = $7, stage_results = $11,
             llm_provider = $8, llm_model = $9, prompt_versions = $10, finished_at = now()
       WHERE id = $1`,
     [
@@ -51,18 +50,22 @@ async function finishCheck(id, r) {
       r.reviewerKey,
       r.extraction,
       r.classification,
-      r.signals,
+      JSON.stringify(r.reasons),
       r.llmProvider,
       r.llmModel,
       r.promptVersions,
+      r.stageResults,
     ],
   );
 }
 
-async function failCheck(id, error) {
+/** Keeps the stages that did finish, so a failed run is still auditable. */
+async function failCheck(id, error, stageResults = {}) {
   await query(
-    `UPDATE review_checks SET status = 'failed', error = $2, finished_at = now() WHERE id = $1`,
-    [id, String(error).slice(0, 2000)],
+    `UPDATE review_checks
+        SET status = 'failed', error = $2, stage_results = $3, finished_at = now()
+      WHERE id = $1`,
+    [id, String(error).slice(0, 2000), stageResults],
   );
 }
 
@@ -146,7 +149,7 @@ async function saveEmbedding({ checkId, reviewId, orderNo, driverId, textNorm, m
   );
 }
 
-module.exports = {
+export {
   createCheck,
   findOpenCheck,
   getCheck,

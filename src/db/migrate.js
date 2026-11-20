@@ -1,9 +1,9 @@
-'use strict';
-const fs = require('fs');
-const path = require('path');
-const { pool } = require('./pool');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { pool } from './pool.js';
 
-const DIR = path.join(__dirname, 'migrations');
+const DIR = path.join(import.meta.dirname, 'migrations');
 const LOCK_KEY = 4_100_001; // advisory lock: one migrator at a time
 
 /** Applies migrations/*.sql in name order, each in its own transaction, once. */
@@ -43,9 +43,9 @@ async function migrate({ log = console.log } = {}) {
   }
 }
 
-module.exports = { migrate };
+export { migrate };
 
-if (require.main === module) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   migrate()
     .then(() => pool.end())
     .catch((err) => {

@@ -1,5 +1,4 @@
-'use strict';
-const sharp = require('sharp');
+import sharp from 'sharp';
 
 /**
  * 64-bit difference hash (dHash). Resizes to 9x8 greyscale and compares
@@ -39,4 +38,4 @@ function hammingDistance(a, b) {
 const toSigned64 = (h) => BigInt.asIntN(64, BigInt(h));
 const toUnsigned64 = (h) => BigInt.asUintN(64, BigInt(h));
 
-module.exports = { dHash, hammingDistance, toSigned64, toUnsigned64 };
+export { dHash, hammingDistance, toSigned64, toUnsigned64 };

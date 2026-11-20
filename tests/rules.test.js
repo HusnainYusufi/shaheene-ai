@@ -1,9 +1,8 @@
-'use strict';
 // Run: node tests/rules.test.js
-const assert = require('assert');
-const { evaluate, matchesBusiness } = require('../src/features/reviewVerification/stages/04-rules');
-const { decide } = require('../src/features/reviewVerification/stages/07-decide');
-const { normalizeArabic, nameKey, scrubPhones } = require('../src/utils/arabicText');
+import assert from 'node:assert';
+import { evaluate, matchesBusiness } from '../src/features/reviewVerification/stages/04-rules.js';
+import { decide } from '../src/features/reviewVerification/stages/07-decide.js';
+import { normalizeArabic, nameKey, scrubPhones } from '../src/utils/arabicText.js';
 
 const BUSINESS = ['legend sleep', 'ليجند سليب', 'ليجند'];
 const DELIVERED = '2026-11-10T12:00:00+03:00';

@@ -1,5 +1,4 @@
-'use strict';
-const env = require('../../config/env');
+import env from '../../config/env.js';
 
 /**
  * Voyage AI embeddings over HTTP.
@@ -35,4 +34,5 @@ async function embed(texts, { inputType = 'document', signal } = {}) {
   return { vectors, model: env.VOYAGE_MODEL };
 }
 
-module.exports = { name: 'voyage', embed };
+export const name = 'voyage';
+export { embed };

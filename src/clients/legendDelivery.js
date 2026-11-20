@@ -1,6 +1,5 @@
-'use strict';
-const env = require('../config/env');
-const { retry } = require('../utils/retry');
+import env from '../config/env.js';
+import { retry } from '../utils/retry.js';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
@@ -53,4 +52,4 @@ async function writeResult(reviewId, result) {
   );
 }
 
-module.exports = { fetchScreenshot, writeResult };
+export { fetchScreenshot, writeResult };

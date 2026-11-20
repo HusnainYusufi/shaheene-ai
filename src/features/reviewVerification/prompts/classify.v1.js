@@ -1,5 +1,3 @@
-'use strict';
-
 const VERSION = 'classify.v1';
 
 const system = `You judge customer reviews that delivery drivers collected for a Saudi mattress and bedding retailer.
@@ -19,4 +17,4 @@ function user({ reviewText, rating, similar }) {
   return `Rating: ${rating ?? 'not shown'}\nReview text:\n"""${reviewText}"""\n\nMost similar earlier reviews:\n${ctx}`;
 }
 
-module.exports = { VERSION, system, user };
+export { VERSION, system, user };

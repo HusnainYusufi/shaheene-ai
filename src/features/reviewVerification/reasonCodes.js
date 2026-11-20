@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Every reason a check can give. `effect` is what the code does to the decision:
  *   reject        -> the review is rejected unless a human overrides it
@@ -31,4 +29,4 @@ function reason(code, detail = null) {
   return { code, effect: def.effect, detail };
 }
 
-module.exports = { REASONS, CODES, reason };
+export { REASONS, CODES, reason };

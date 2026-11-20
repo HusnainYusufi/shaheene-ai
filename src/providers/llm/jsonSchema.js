@@ -1,5 +1,4 @@
-'use strict';
-const { z } = require('zod');
+import { z } from 'zod';
 
 /** zod schema -> plain JSON Schema for provider structured-output params. */
 function toJsonSchema(schema) {
@@ -19,4 +18,4 @@ function extractJson(text) {
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
-module.exports = { toJsonSchema, extractJson };
+export { toJsonSchema, extractJson };

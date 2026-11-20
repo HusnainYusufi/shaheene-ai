@@ -1,13 +1,14 @@
-'use strict';
-const env = require('../../config/env');
+import env from '../../config/env.js';
 
 /**
  * The only place that knows which LLM company is in use. Features call
  * llm.generateJson(...) and never import an adapter directly.
  */
 const adapters = {
-  anthropic: () => require('./anthropic'),
-  minimax: () => require('./minimax'),
+  anthropic: () => import('./anthropic.js'),
+  minimax: () => import('./minimax.js'),
 };
 
-module.exports = adapters[env.LLM_PROVIDER]();
+const llm = await adapters[env.LLM_PROVIDER]();
+
+export default llm;

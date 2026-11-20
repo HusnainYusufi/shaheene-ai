@@ -1,9 +1,8 @@
-'use strict';
-const express = require('express');
-const { z } = require('zod');
-const { QUEUES, getBoss } = require('../../queue/boss');
-const { HttpError } = require('../../middlewares/errorHandler');
-const repo = require('./repository');
+import express from 'express';
+import { z } from 'zod';
+import { QUEUES, getBoss } from '../../queue/boss.js';
+import { HttpError } from '../../middlewares/errorHandler.js';
+import * as repo from './repository.js';
 
 const router = express.Router();
 
@@ -42,7 +41,8 @@ router.get('/checks/:id', async (req, res) => {
     status: check.status,
     decision: check.decision,
     reasonCodes: check.reason_codes,
-    reasons: check.signals?.reasons || [],
+    reasons: check.reasons,
+    stages: check.stage_results,
     extraction: check.extraction,
     classification: check.classification,
     llm: { provider: check.llm_provider, model: check.llm_model, prompts: check.prompt_versions },
@@ -54,4 +54,4 @@ router.get('/checks/:id', async (req, res) => {
   });
 });
 
-module.exports = router;
+export default router;

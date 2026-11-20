@@ -1,10 +1,12 @@
 {
   "name": "shaheen-ai",
   "version": "0.1.0",
+  "private": true,
+  "type": "module",
   "description": "AI verification service for Shaheen (Legend Sleep delivery): checks driver review screenshots",
   "main": "src/server.js",
-  "directories": {
-    "test": "tests"
+  "engines": {
+    "node": ">=22.12"
   },
   "scripts": {
     "start": "node src/server.js",
@@ -23,6 +25,7 @@
     "url": "https://github.com/HusnainYusufi/shaheene-ai/issues"
   },
   "homepage": "https://github.com/HusnainYusufi/shaheene-ai#readme",
+  "license": "UNLICENSED",
   "dependencies": {
     "@anthropic-ai/sdk": "^1.11.0",
     "dotenv": "^18.0.10",
@@ -34,10 +37,5 @@
   },
   "devDependencies": {
     "prettier": "^3.10.1"
-  },
-  "private": true,
-  "engines": {
-    "node": ">=22.12"
-  },
-  "license": "UNLICENSED"
+  }
 }

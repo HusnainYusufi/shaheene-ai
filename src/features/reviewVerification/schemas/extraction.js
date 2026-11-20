@@ -1,5 +1,4 @@
-'use strict';
-const { z } = require('zod');
+import { z } from 'zod';
 
 /** What the vision model reads off the review screenshot. */
 const ExtractionSchema = z.object({
@@ -29,4 +28,4 @@ const ExtractionSchema = z.object({
   confidence: z.number().min(0).max(1).describe('How sure you are of the fields above'),
 });
 
-module.exports = { ExtractionSchema };
+export { ExtractionSchema };

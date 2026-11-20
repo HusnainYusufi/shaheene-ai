@@ -1,8 +1,7 @@
-'use strict';
-const { Pool } = require('pg');
-const env = require('../config/env');
+import pg from 'pg';
+import env from '../config/env.js';
 
-const pool = new Pool({ connectionString: env.DATABASE_URL, max: 10 });
+const pool = new pg.Pool({ connectionString: env.DATABASE_URL, max: 10 });
 
 pool.on('error', (err) => console.error('[pg] idle client error', err.message));
 
@@ -22,4 +21,6 @@ async function tx(fn) {
   }
 }
 
-module.exports = { pool, query: (text, params) => pool.query(text, params), tx };
+const query = (text, params) => pool.query(text, params);
+
+export { pool, query, tx };

@@ -1,5 +1,4 @@
-'use strict';
-const { z } = require('zod');
+import { z } from 'zod';
 
 /** Second-pass judgement on the review text. */
 const ClassificationSchema = z.object({
@@ -12,4 +11,4 @@ const ClassificationSchema = z.object({
   rationale: z.string().describe('One or two short sentences, English'),
 });
 
-module.exports = { ClassificationSchema };
+export { ClassificationSchema };

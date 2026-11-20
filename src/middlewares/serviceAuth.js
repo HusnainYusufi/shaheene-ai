@@ -1,6 +1,5 @@
-'use strict';
-const crypto = require('crypto');
-const env = require('../config/env');
+import crypto from 'node:crypto';
+import env from '../config/env.js';
 
 const expected = Buffer.from(env.SERVICE_TOKEN);
 
@@ -12,4 +11,4 @@ function serviceAuth(req, res, next) {
   next();
 }
 
-module.exports = { serviceAuth };
+export { serviceAuth };
