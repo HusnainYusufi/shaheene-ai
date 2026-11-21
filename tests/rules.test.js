@@ -1,6 +1,10 @@
 // Run: node tests/rules.test.js
 import assert from 'node:assert';
-import { evaluate, matchesBusiness } from '../src/features/reviewVerification/stages/04-rules.js';
+import {
+  evaluate,
+  matchesBusiness,
+  editDistance,
+} from '../src/features/reviewVerification/stages/04-rules.js';
 import { decide } from '../src/features/reviewVerification/stages/07-decide.js';
 import { normalizeArabic, nameKey, scrubPhones } from '../src/utils/arabicText.js';
 
@@ -46,6 +50,27 @@ t('business match: Arabic with hamza / diacritics', () => {
   assert.ok(matchesBusiness('لِيجَند سليب', BUSINESS));
   assert.ok(matchesBusiness('Legend Sleep | ليجند', BUSINESS));
   assert.ok(matchesBusiness('LEGEND SLEEP Riyadh', BUSINESS));
+});
+
+t('business match: one-letter spelling variants of the full name', () => {
+  assert.ok(matchesBusiness('لينجد سليب', BUSINESS)); // ن and ج swapped
+  assert.ok(matchesBusiness('متجر لينجد سليب للمراتب', BUSINESS));
+  assert.ok(matchesBusiness('Lejend Sleep', BUSINESS));
+  assert.ok(matchesBusiness('Legend Slep - Jeddah', BUSINESS));
+});
+
+t('business match stays strict', () => {
+  assert.ok(!matchesBusiness('لينجد', BUSINESS)); // short names need an exact match
+  assert.ok(!matchesBusiness('لنجد سلب', BUSINESS)); // two edits away
+  assert.ok(!matchesBusiness('Legend Coffee', BUSINESS));
+  assert.ok(!matchesBusiness('Sleep High', BUSINESS));
+  assert.ok(!matchesBusiness('IKEA', BUSINESS));
+});
+
+t('editDistance counts a swap as one edit', () => {
+  assert.strictEqual(editDistance('لينجدسليب', 'ليجندسليب', 1), 1);
+  assert.strictEqual(editDistance('abcd', 'abcd', 1), 0);
+  assert.ok(editDistance('abcd', 'badc', 1) > 1);
 });
 
 t('wrong business is flagged', () =>
