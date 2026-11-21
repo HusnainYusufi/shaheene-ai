@@ -17,7 +17,7 @@ async function run(ctx, deps) {
   );
   const [vector] = vectors;
 
-  const similar = await deps.repo.findSimilarTexts(vector, ctx.input.reviewId, 5);
+  const similar = await deps.repo.findSimilarTexts(vector, ctx.input.orderNo, 5);
   await deps.repo.saveEmbedding({
     checkId: ctx.check.id,
     reviewId: ctx.input.reviewId,

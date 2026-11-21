@@ -74,29 +74,31 @@ async function markReported(id) {
 }
 
 // --- images ---
+// Duplicate searches skip the same order: a driver whose review was rejected
+// may send it again for that order, and their earlier attempt is not a copy.
 
-async function findSameImage(sha256, excludeReviewId) {
+async function findSameImage(sha256, excludeOrderNo) {
   const { rows } = await query(
     `SELECT review_id, order_no, created_at FROM image_hashes
-      WHERE sha256 = $1 AND review_id <> $2
+      WHERE sha256 = $1 AND order_no <> $2
       ORDER BY created_at LIMIT 5`,
-    [sha256, excludeReviewId],
+    [sha256, excludeOrderNo],
   );
   return rows;
 }
 
 /** Hamming distance on the 64-bit dHash. Full scan: fine for tens of thousands of rows. */
-async function findNearImages(phashSigned, maxDistance, excludeReviewId) {
+async function findNearImages(phashSigned, maxDistance, excludeOrderNo) {
   const { rows } = await query(
     `SELECT review_id, order_no, distance FROM (
        SELECT review_id, order_no,
               bit_count(((phash # $1::bigint))::bit(64)) AS distance
          FROM image_hashes
-        WHERE review_id <> $3
+        WHERE order_no <> $3
      ) t
      WHERE distance <= $2
      ORDER BY distance LIMIT 5`,
-    [phashSigned.toString(), maxDistance, excludeReviewId],
+    [phashSigned.toString(), maxDistance, excludeOrderNo],
   );
   return rows.map((r) => ({ ...r, distance: Number(r.distance) }));
 }
@@ -112,12 +114,12 @@ async function saveImageHash({ checkId, reviewId, orderNo, sha256, phashSigned }
 
 // --- reviewers ---
 
-/** Other orders whose finished, non-rejected check had the same reviewer. */
+/** Other orders whose approved check had the same reviewer (only approve pays). */
 async function findReviewerUses(reviewerKey, excludeOrderNo) {
   const { rows } = await query(
     `SELECT DISTINCT order_no FROM review_checks
       WHERE reviewer_key = $1 AND order_no <> $2
-        AND status = 'done' AND decision <> 'reject'
+        AND status = 'done' AND decision = 'approve'
       LIMIT 10`,
     [reviewerKey, excludeOrderNo],
   );
@@ -126,15 +128,16 @@ async function findReviewerUses(reviewerKey, excludeOrderNo) {
 
 // --- text embeddings ---
 
-async function findSimilarTexts(vector, excludeReviewId, limit = 5) {
+/** Nearest texts from other orders (same-order resubmissions are not copies). */
+async function findSimilarTexts(vector, excludeOrderNo, limit = 5) {
   const { rows } = await query(
     `SELECT review_id, order_no, driver_id, text_norm,
             1 - (embedding <=> $1::vector) AS similarity
        FROM review_text_embeddings
-      WHERE review_id <> $2
+      WHERE order_no <> $2
       ORDER BY embedding <=> $1::vector
       LIMIT $3`,
-    [toVector(vector), excludeReviewId, limit],
+    [toVector(vector), excludeOrderNo, limit],
   );
   return rows.map((r) => ({ ...r, similarity: Number(r.similarity) }));
 }
