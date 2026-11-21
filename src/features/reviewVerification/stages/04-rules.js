@@ -4,13 +4,55 @@ import { CODES, reason } from '../reasonCodes.js';
 const DAY = 24 * 60 * 60 * 1000;
 const MIN_CONFIDENCE = 0.6;
 
+/** Names shorter than this (as a key) must match exactly: one edit is too loose for them. */
+const FUZZY_MIN_LEN = 8;
+
+/**
+ * Edit distance with adjacent transpositions (optimal string alignment), stopping
+ * early once it exceeds `max`. 'لينجدسليب' vs 'ليجندسليب' = 1 (ن and ج swapped).
+ */
+function editDistance(a, b, max = 1) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    let rowMin = Infinity;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+      rowMin = Math.min(rowMin, d[i][j]);
+    }
+    if (rowMin > max) return max + 1;
+  }
+  return d[a.length][b.length];
+}
+
+/** Does some part of `key` sit within one edit of `target`? */
+function containsNear(key, target) {
+  for (let len = target.length - 1; len <= target.length + 1; len++) {
+    for (let i = 0; i + len <= key.length; i++) {
+      if (editDistance(key.slice(i, i + len), target) <= 1) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * The review's business name is ours when, after normalising, it contains one of
+ * the configured names. Fallback for transliteration slips ('لينجد سليب' for
+ * 'ليجند سليب', 'Lejend Sleep'): within one edit of a configured name of at least
+ * FUZZY_MIN_LEN letters. Kept tight on purpose: this rule is the main defence
+ * against a review of another business.
+ */
 function matchesBusiness(name, businessNames) {
   const key = nameKey(name);
   if (!key) return false;
-  return businessNames.some((b) => {
-    const bk = nameKey(b);
-    return bk && (key.includes(bk) || (key.length >= 4 && bk.includes(key)));
-  });
+  const keys = businessNames.map(nameKey).filter(Boolean);
+  if (keys.some((bk) => key.includes(bk) || (key.length >= 4 && bk.includes(key)))) return true;
+  return keys.some((bk) => bk.length >= FUZZY_MIN_LEN && containsNear(key, bk));
 }
 
 /**
@@ -92,4 +134,4 @@ async function run(ctx, deps) {
 }
 
 export const name = 'rules';
-export { run, evaluate, matchesBusiness };
+export { run, evaluate, matchesBusiness, editDistance };
