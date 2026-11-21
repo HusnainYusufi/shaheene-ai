@@ -12,6 +12,31 @@ class LlmRefusalError extends Error {
   }
 }
 
+const NUMBER_LIMITS = ['minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf'];
+
+/**
+ * Structured outputs reject numeric limits (minimum, maximum, ...) on number
+ * and integer fields. Move them into the description so the model still sees
+ * them; the zod schema enforces them again on the reply.
+ */
+function forStructuredOutput(node) {
+  if (Array.isArray(node)) return node.map(forStructuredOutput);
+  if (!node || typeof node !== 'object') return node;
+  const out = {};
+  const limits = [];
+  for (const [k, v] of Object.entries(node)) {
+    if (NUMBER_LIMITS.includes(k) && (node.type === 'integer' || node.type === 'number')) {
+      limits.push(`${k} ${v}`);
+    } else {
+      out[k] = forStructuredOutput(v);
+    }
+  }
+  if (limits.length) {
+    out.description = [node.description, `(${limits.join(', ')})`].filter(Boolean).join(' ');
+  }
+  return out;
+}
+
 function toBlocks(content) {
   return content.map((part) => {
     if (part.type === 'image') {
@@ -37,7 +62,7 @@ async function generateJson({ system, content, schema, maxTokens = 4096, signal 
       messages: [{ role: 'user', content: toBlocks(content) }],
       output_config: {
         effort: env.ANTHROPIC_EFFORT,
-        format: { type: 'json_schema', schema: toJsonSchema(schema) },
+        format: { type: 'json_schema', schema: forStructuredOutput(toJsonSchema(schema)) },
       },
       // On a safety decline the API re-runs the request on a fallback model.
       betas: ['server-side-fallback-2026-07-01'],
