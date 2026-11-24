@@ -12,7 +12,15 @@ const REASONS = Object.freeze({
   WRONG_BUSINESS: { effect: 'reject', label: 'Review is for another business' },
   BUSINESS_UNREADABLE: { effect: 'manual_review', label: 'Business name not readable' },
   REVIEW_BEFORE_DELIVERY: { effect: 'reject', label: 'Review was posted before the delivery' },
-  LATE_SUBMISSION: { effect: 'manual_review', label: 'Submitted long after delivery' },
+  REVIEW_TOO_OLD: {
+    effect: 'reject',
+    label: 'Review was posted too long ago (outside the review window)',
+  },
+  POSTED_TIME_UNREADABLE: {
+    effect: 'manual_review',
+    label: 'Posting time of the review not visible',
+  },
+  LATE_SUBMISSION: { effect: 'reject', label: 'Submitted after the review window closed' },
   REVIEWER_REUSED: { effect: 'manual_review', label: 'Reviewer name used on another order' },
   NEGATIVE_REVIEW: { effect: 'reject', label: 'Low rating or negative review' },
   NOT_POSITIVE: { effect: 'manual_review', label: 'Review does not praise Legend Sleep' },

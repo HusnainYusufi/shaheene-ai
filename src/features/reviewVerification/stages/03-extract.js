@@ -1,4 +1,4 @@
-import * as prompt from '../prompts/extract.v1.js';
+import * as prompt from '../prompts/extract.v2.js';
 import { ExtractionSchema } from '../schemas/extraction.js';
 import { scrubPhones } from '../../../utils/arabicText.js';
 import { retry } from '../../../utils/retry.js';

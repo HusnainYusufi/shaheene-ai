@@ -22,12 +22,18 @@ worker ◀───────────────────────�
   01 fetchImage      GET  legend-delivery /internal/reviews/:id/screenshot
   02 imageHash       sha256 exact match + 64-bit dHash (Hamming ≤ PHASH_MAX_DISTANCE)
   03 extract         vision LLM → business, reviewer, rating, text, posted time
-  04 rules           business name, timing vs delivery, reviewer reuse, rating, confidence
+  04 rules           business name, 48-hour review window, reviewer reuse, rating, confidence
   05 textSimilarity  local embeddings (multilingual-e5-small) + pgvector cosine search
   06 classify        LLM: genuine vs templated, sentiment
   07 decide          any reject reason → reject; any manual_review reason → manual_review; else approve
   └─▶ POST legend-delivery /internal/reviews/:id/ai-check
 ```
+
+**Review window** (`REVIEW_WINDOW_HOURS`, default 48): the review must be posted, and the screenshot sent, within that many hours of the delivery.
+
+- A review the screenshot shows as that old or older ("2 days ago", "5 months ago") is rejected (`REVIEW_TOO_OLD`). "a day ago" and "N hours ago" pass.
+- A screenshot sent after the window is rejected (`LATE_SUBMISSION`). legend-delivery also refuses the upload.
+- If no posting time is visible, the driver is asked for a screenshot that shows it (`POSTED_TIME_UNREADABLE`).
 
 Each stage gets the same shared `ctx`, adds its reasons, and returns its output. The pipeline saves every output as `stage_results` (`{ stageName: { ms, output } }`) on the check, so ops can see exactly why a screenshot was flagged. If a run fails, the stages that did finish are still saved.
 
