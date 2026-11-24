@@ -1,7 +1,8 @@
 import { nameKey } from '../../../utils/arabicText.js';
 import { CODES, reason } from '../reasonCodes.js';
 
-const DAY = 24 * 60 * 60 * 1000;
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
 const MIN_CONFIDENCE = 0.6;
 
 /** Names shorter than this (as a key) must match exactly: one edit is too loose for them. */
@@ -57,7 +58,12 @@ function matchesBusiness(name, businessNames) {
 
 /**
  * Pure business rules on the extracted fields. No I/O: tested in tests/rules.test.js.
- * input: { extraction, submittedAt, deliveredAt?, businessNames, reviewerUses, maxSubmitDelayDays }
+ * input: { extraction, submittedAt, deliveredAt?, businessNames, reviewerUses, reviewWindowHours }
+ *
+ * Review window (reviewWindowHours, 48 by default): the review must be posted,
+ * and the screenshot sent, within that many hours of the delivery. A review
+ * the screenshot shows as that old or older ("2 days ago", "5 months ago")
+ * is rejected; so is one whose posting time can't be read.
  */
 function evaluate({
   extraction,
@@ -65,7 +71,7 @@ function evaluate({
   deliveredAt,
   businessNames,
   reviewerUses = [],
-  maxSubmitDelayDays = 14,
+  reviewWindowHours = 48,
 }) {
   const out = [];
   const ex = extraction;
@@ -77,11 +83,24 @@ function evaluate({
 
   const submitted = new Date(submittedAt).getTime();
   const delivered = deliveredAt ? new Date(deliveredAt).getTime() : null;
+  const windowMs = reviewWindowHours * HOUR;
 
-  if (delivered && ex.postedAgeDays != null) {
-    // Relative times are coarse ("a week ago" covers 7-13 days): allow half the age, min 1 day.
+  if (ex.postedAgeDays == null) {
+    out.push(reason(CODES.POSTED_TIME_UNREADABLE));
+  } else if (ex.postedAgeDays * DAY >= windowMs) {
+    // "a day ago" passes a 48-hour window; "2 days ago" and older do not.
+    out.push(
+      reason(CODES.REVIEW_TOO_OLD, {
+        postedRelative: ex.postedRelative,
+        ageDays: ex.postedAgeDays,
+        windowHours: reviewWindowHours,
+      }),
+    );
+  } else if (delivered) {
+    // "N hours ago" is precise to the hour: allow 2 hours. Day-level times are
+    // coarse ("a day ago" covers 24-47 hours): allow half the age, min 1 day.
     const postedAt = submitted - ex.postedAgeDays * DAY;
-    const tolerance = Math.max(1, ex.postedAgeDays * 0.5) * DAY;
+    const tolerance = ex.postedAgeDays < 1 ? 2 * HOUR : Math.max(1, ex.postedAgeDays * 0.5) * DAY;
     if (postedAt + tolerance < delivered) {
       out.push(
         reason(CODES.REVIEW_BEFORE_DELIVERY, {
@@ -92,8 +111,13 @@ function evaluate({
     }
   }
 
-  if (delivered && submitted - delivered > maxSubmitDelayDays * DAY) {
-    out.push(reason(CODES.LATE_SUBMISSION, { days: Math.round((submitted - delivered) / DAY) }));
+  if (delivered && submitted - delivered > windowMs) {
+    out.push(
+      reason(CODES.LATE_SUBMISSION, {
+        hours: Math.round((submitted - delivered) / HOUR),
+        windowHours: reviewWindowHours,
+      }),
+    );
   }
 
   if (reviewerUses.length) {
@@ -127,7 +151,7 @@ async function run(ctx, deps) {
     deliveredAt: ctx.input.deliveredAt,
     businessNames: deps.env.BUSINESS_NAMES,
     reviewerUses,
-    maxSubmitDelayDays: deps.env.MAX_SUBMIT_DELAY_DAYS,
+    reviewWindowHours: deps.env.REVIEW_WINDOW_HOURS,
   });
   ctx.reasons.push(...found);
   return { reviewerUses: reviewerUses.length, reasons: found.map((r) => r.code) };

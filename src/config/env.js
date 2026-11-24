@@ -42,7 +42,8 @@ const schema = z
     // Tuned for multilingual-e5-small, whose scores sit in a high band (unrelated ~0.83).
     TEXT_SIMILARITY_REVIEW: z.coerce.number().min(0).max(1).default(0.95),
     TEXT_SIMILARITY_REJECT: z.coerce.number().min(0).max(1).default(0.985),
-    MAX_SUBMIT_DELAY_DAYS: z.coerce.number().positive().default(14),
+    // The review must be posted, and sent, within this many hours of the delivery.
+    REVIEW_WINDOW_HOURS: z.coerce.number().positive().default(48),
   })
   .superRefine((env, ctx) => {
     const need = (key) => {

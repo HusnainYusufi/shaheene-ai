@@ -10,7 +10,7 @@ import { normalizeArabic, nameKey, scrubPhones } from '../src/utils/arabicText.j
 
 const BUSINESS = ['legend sleep', 'ليجند سليب', 'ليجند'];
 const DELIVERED = '2026-11-10T12:00:00+03:00';
-const SUBMITTED = '2026-11-12T12:00:00+03:00';
+const SUBMITTED = '2026-11-11T18:00:00+03:00'; // 30 hours after delivery
 
 const base = {
   isReviewScreenshot: true,
@@ -80,26 +80,79 @@ t('missing business name needs a human', () =>
   assert.deepStrictEqual(run({ businessName: null }), ['BUSINESS_UNREADABLE']),
 );
 
-t('review posted well before delivery', () =>
-  assert.deepStrictEqual(run({ postedRelative: 'منذ شهر', postedAgeDays: 30 }), [
-    'REVIEW_BEFORE_DELIVERY',
+// --- 48-hour review window -----------------------------------------------------
+t('"a day ago" and "5 hours ago" are inside the window', () => {
+  assert.deepStrictEqual(run({ postedRelative: 'a day ago', postedAgeDays: 1 }), []);
+  assert.deepStrictEqual(run({ postedRelative: '5 hours ago', postedAgeDays: 0.21 }), []);
+});
+t('"2 days ago" is too old', () =>
+  assert.deepStrictEqual(run({ postedRelative: 'منذ يومين', postedAgeDays: 2 }), [
+    'REVIEW_TOO_OLD',
   ]),
 );
-t('coarse "a week ago" within tolerance', () =>
-  assert.deepStrictEqual(run({ postedAgeDays: 3 }), []),
+t('"5 months ago" is too old', () =>
+  assert.deepStrictEqual(run({ postedRelative: '5 months ago', postedAgeDays: 150 }), [
+    'REVIEW_TOO_OLD',
+  ]),
 );
-t('unknown age skips the timing rule', () =>
-  assert.deepStrictEqual(run({ postedAgeDays: null }), []),
+t('too old even when the delivery time is unknown', () =>
+  assert.deepStrictEqual(run({ postedAgeDays: 60 }, { deliveredAt: null }), ['REVIEW_TOO_OLD']),
 );
-t('no deliveredAt skips timing rules', () =>
-  assert.deepStrictEqual(run({ postedAgeDays: 60 }, { deliveredAt: null }), []),
+t('no posting time visible needs a better screenshot', () =>
+  assert.deepStrictEqual(run({ postedRelative: null, postedAgeDays: null }), [
+    'POSTED_TIME_UNREADABLE',
+  ]),
 );
-
-t('late submission', () =>
-  assert.deepStrictEqual(run({ postedAgeDays: 0 }, { submittedAt: '2026-11-30T12:00:00+03:00' }), [
+t('posted hours before the delivery', () =>
+  // Delivered 12:00, sent 14:00, "10 hours ago" = posted 04:00.
+  assert.deepStrictEqual(
+    run(
+      { postedRelative: '10 hours ago', postedAgeDays: 0.42 },
+      { submittedAt: '2026-11-10T14:00:00+03:00' },
+    ),
+    ['REVIEW_BEFORE_DELIVERY'],
+  ),
+);
+t('posted just after the delivery', () =>
+  assert.deepStrictEqual(
+    run(
+      { postedRelative: 'an hour ago', postedAgeDays: 0.04 },
+      { submittedAt: '2026-11-10T14:00:00+03:00' },
+    ),
+    [],
+  ),
+);
+t('sent exactly 48 hours after delivery is still in time', () =>
+  assert.deepStrictEqual(
+    run({ postedAgeDays: 1 }, { submittedAt: '2026-11-12T12:00:00+03:00' }),
+    [],
+  ),
+);
+t('sent 49 hours after delivery is late', () =>
+  assert.deepStrictEqual(run({ postedAgeDays: 1 }, { submittedAt: '2026-11-12T13:00:00+03:00' }), [
     'LATE_SUBMISSION',
   ]),
 );
+t('window is configurable', () => {
+  assert.deepStrictEqual(run({ postedAgeDays: 2 }, { reviewWindowHours: 72 }), []);
+  // 24h window: "a day ago" is too old, and sent 30h after delivery is late.
+  assert.deepStrictEqual(run({ postedAgeDays: 1 }, { reviewWindowHours: 24 }), [
+    'REVIEW_TOO_OLD',
+    'LATE_SUBMISSION',
+  ]);
+});
+t('too old rejects; unreadable time is manual', () => {
+  const ev = (over) =>
+    evaluate({
+      extraction: { ...base, ...over },
+      submittedAt: SUBMITTED,
+      deliveredAt: DELIVERED,
+      businessNames: BUSINESS,
+    });
+  assert.strictEqual(decide(ev({ postedAgeDays: 2 })), 'reject');
+  assert.strictEqual(decide(ev({ postedAgeDays: null })), 'manual_review');
+  assert.strictEqual(decide(ev({ postedAgeDays: 1 }, {})), 'approve');
+});
 
 t('reviewer reused on another order', () =>
   assert.deepStrictEqual(run({}, { reviewerUses: ['DEMO-1'] }), ['REVIEWER_REUSED']),

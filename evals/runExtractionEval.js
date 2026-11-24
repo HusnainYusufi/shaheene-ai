@@ -53,7 +53,7 @@ async function runOne(label) {
         submittedAt: label.submittedAt,
         deliveredAt: label.deliveredAt,
         businessNames: env.BUSINESS_NAMES,
-        maxSubmitDelayDays: env.MAX_SUBMIT_DELAY_DAYS,
+        reviewWindowHours: env.REVIEW_WINDOW_HOURS,
       });
   const actual = {
     isReviewScreenshot: ex.isReviewScreenshot,

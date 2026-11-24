@@ -24,7 +24,12 @@ const ExtractionSchema = z.object({
     .number()
     .min(0)
     .nullable()
-    .describe('postedRelative converted to days before the screenshot was taken; null if unknown'),
+    .describe(
+      'postedRelative converted to days before the screenshot was taken: "just now" / minutes / hours ago = hours ÷ 24 ' +
+        '(e.g. 5 hours = 0.21), "a day ago" / "منذ يوم" = 1, "2 days ago" / "منذ يومين" = 2, "a week ago" = 7, ' +
+        '"a month ago" = 30, "a year ago" = 365; for an absolute date, the days between it and the upload time; ' +
+        'null only if no posting time is visible',
+    ),
   reviewState: z
     .enum(['published', 'draft', 'unknown'])
     .describe('draft = the compose/edit screen with a Post or Publish button, not a posted review'),
