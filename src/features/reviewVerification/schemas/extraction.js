@@ -19,7 +19,10 @@ const ExtractionSchema = z.object({
   postedRelative: z
     .string()
     .nullable()
-    .describe('Posting time exactly as shown, e.g. "منذ يومين", "2 days ago", "a week ago"'),
+    .describe(
+      'Posting time of the customer review exactly as shown next to its stars, e.g. "منذ يومين", "2 days ago", ' +
+        '"a week ago"; never the time of an owner reply',
+    ),
   postedAgeDays: z
     .number()
     .min(0)
