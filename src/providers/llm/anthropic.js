@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import env from '../../config/env.js';
 import { toJsonSchema, extractJson } from './jsonSchema.js';
+import { anthropicSystem, anthropicUsage } from './cache.js';
 
 const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 0 }); // retries live in utils/retry
 
@@ -51,6 +52,7 @@ function toBlocks(content) {
 
 /**
  * generateJson({ system, content, schema, maxTokens, signal }) -> { data, model, usage }
+ * system is the stable, cached prefix (see ./cache.js).
  * content: [{ type: 'text', text } | { type: 'image', mediaType, data(base64) }]
  */
 async function generateJson({ system, content, schema, maxTokens = 4096, signal }) {
@@ -58,7 +60,8 @@ async function generateJson({ system, content, schema, maxTokens = 4096, signal 
     {
       model: env.ANTHROPIC_MODEL,
       max_tokens: maxTokens,
-      system,
+      // Same text as before; the breakpoint lets repeat calls read it from cache.
+      system: anthropicSystem(system),
       messages: [{ role: 'user', content: toBlocks(content) }],
       output_config: {
         effort: env.ANTHROPIC_EFFORT,
@@ -81,7 +84,7 @@ async function generateJson({ system, content, schema, maxTokens = 4096, signal 
   return {
     data: schema.parse(extractJson(text)),
     model: response.model,
-    usage: { input: response.usage.input_tokens, output: response.usage.output_tokens },
+    usage: anthropicUsage(response.usage),
   };
 }
 

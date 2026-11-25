@@ -14,7 +14,7 @@ async function run(ctx, deps) {
     return { skipped: 'no review text' };
   }
 
-  const { data } = await retry(
+  const { data, usage } = await retry(
     (signal) =>
       deps.llm.generateJson({
         system: prompt.system,
@@ -44,7 +44,7 @@ async function run(ctx, deps) {
       }),
     );
   }
-  return { promptVersion: prompt.VERSION, ...data };
+  return { promptVersion: prompt.VERSION, usage, ...data };
 }
 
 export const name = 'classify';

@@ -12,7 +12,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "migrate": "node src/db/migrate.js",
-    "test": "node tests/rules.test.js && node tests/perceptualHash.test.js",
+    "test": "node tests/rules.test.js && node tests/perceptualHash.test.js && node tests/llmCache.test.js",
     "eval:extraction": "node evals/runExtractionEval.js",
     "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\" \"evals/**/*.js\"",
     "db:up": "docker compose up -d",
