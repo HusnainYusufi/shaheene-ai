@@ -6,7 +6,7 @@ import { CODES, reason } from '../reasonCodes.js';
 
 /** Vision LLM reads the screenshot into structured fields. */
 async function run(ctx, deps) {
-  const { data, model } = await retry(
+  const { data, model, usage } = await retry(
     (signal) =>
       deps.llm.generateJson({
         system: prompt.system,
@@ -28,7 +28,7 @@ async function run(ctx, deps) {
     ctx.reasons.push(reason(CODES.NOT_A_REVIEW));
     ctx.stop = true;
   }
-  return { model, promptVersion: prompt.VERSION, ...ctx.extraction };
+  return { model, promptVersion: prompt.VERSION, usage, ...ctx.extraction };
 }
 
 export const name = 'extract';

@@ -1,5 +1,6 @@
 import env from '../../config/env.js';
 import { toJsonSchema, extractJson } from './jsonSchema.js';
+import { openAiUsage } from './cache.js';
 
 const PARSE_ATTEMPTS = 2;
 
@@ -53,6 +54,8 @@ async function complete(messages, { maxTokens, signal }) {
  * MiniMax M3 models have no structured-output mode, so the JSON Schema goes in the
  * system prompt and the reply is validated with zod. A reply that fails validation
  * is sent back once with the error so the model can correct it.
+ * The system message (prompt + schema) is identical for every call of a stage
+ * and always first, so the provider's prefix cache can reuse it (./cache.js).
  */
 export async function generateJson({ system, content, schema, maxTokens = 8000, signal }) {
   const messages = [
@@ -73,10 +76,7 @@ export async function generateJson({ system, content, schema, maxTokens = 8000, 
       return {
         data: schema.parse(extractJson(text)),
         model: body.model || env.MINIMAX_MODEL,
-        usage: {
-          input: body.usage?.prompt_tokens ?? null,
-          output: body.usage?.completion_tokens ?? null,
-        },
+        usage: openAiUsage(body.usage),
       };
     } catch (err) {
       lastError = err;
